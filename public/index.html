@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>实战演练XSS攻击与防御</title>
+</head>
+<body>
+	<div></div>
+	<div class="">
+		<textarea name="" id="txt" cols="30" rows="10"></textarea>
+		<button id="setBtn">评论</button>
+		<button id="getBtn">获取评论</button>
+	</div>
+	<script src='javascripts/htmlparser.js'></script>
+	<script src='javascripts/he.js'></script>
+	<script type="text/javascript">
+		var parse = function( str ){
+			var results = '';
+			try{
+				HTMLParser(he.unescape(str,{strict: true}),{
+					start: function(tag, attrs, unary){ // unary 是否单标签
+						if(tag == 'script' || tag == 'style' || tag == 'link' || tag == 'iframe' || tag == 'frame'){
+							return;
+						}
+						results += '<' + tag;
+						// 循环属性，这里可以过滤onclick mouseover onerror等事件属性
+						for(var i = 0, len = attrs.length; i < len; i++){
+							if(attrs[i].name == 'onclick' || attrs[i].name == 'onerror'){
+								break;
+							}
+							results += ' '+attrs[i].name + ' = ' + attrs[i].escaped;
+						}
+						results += (unary?' /':'') + '>'
+					},
+					end: function(tag){
+						results += '</'+tag+'>';
+					},
+					chars: function(text){
+						results +=text;
+					},
+					comment: function(text){ // 注释
+						results +='<!--' +text+'--->';
+					}
+				});
+				return results;
+			}catch(e){
+				console.log(e);
+			}finally{
+				
+			}
+		}
+		var setBtn = document.getElementById('setBtn');
+		var getBtn = document.getElementById('getBtn');
+		var txt = document.getElementById('txt');
+
+		setBtn.addEventListener('click',function(){
+			var xhr = new XMLHttpRequest();
+			var url = 'users/setComment?comment='+ txt.value;
+			xhr.open('get',url,true);
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState == 4){
+					if(xhr.status == 200){
+						// var com = JSON.parse(xhr.response).comment;
+						// var txt = document.createElement('span');
+						// txt.innerHTML = com;
+						// document.body.appendChild(txt);
+					}else{
+						console.log('error');
+					}
+				}
+			}
+			xhr.send();
+		});
+		getBtn.addEventListener('click',function(){
+			var xhr = new XMLHttpRequest();
+			var url = 'users/getComment';
+			xhr.open('get',url,true);
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState == 4){
+					if(xhr.status == 200){
+						var com = parse(JSON.parse(xhr.response).comment);
+						//var com = JSON.parse(xhr.response).comment;
+						var txt = document.createElement('span');
+						txt.innerHTML = com;
+						document.body.appendChild(txt);
+					}
+				}
+			}
+			xhr.send();
+		})
+	</script>
+</body>
+</html>
