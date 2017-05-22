@@ -6,3 +6,18 @@
 > * 编码
 > * 过滤
 > * 校正
+
+## Build Setup
+
+``` bash
+# install dependencies 先按照express 搭建简单的服务框架
+npm install express-generator -g
+
+express xss --view= pug
+cd xss 
+npm install
+SET DEBUG = xss:* & npm start
+
+# serve with hot reload at localhost:3000
+npm start
+
